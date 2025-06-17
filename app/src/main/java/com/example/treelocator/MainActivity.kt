@@ -13,8 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.*
 import com.example.treelocator.ui.theme.TreeLocatorTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.AndroidViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext

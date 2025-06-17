@@ -23,7 +23,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.res.painterResource
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +40,8 @@ fun GpsPage(viewModel: MainViewModel) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     val activity = LocalContext.current as Activity
     val LightGreen = Color(0xFF81C784)
+    val currentDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+    var showSettings by remember { mutableStateOf(false) }
 
     // Gestion de la permission
     val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
@@ -50,6 +58,16 @@ fun GpsPage(viewModel: MainViewModel) {
         return if (parent != null) getCategoryPath(parent) + "/" + cat.name else cat.name
     }
 
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        IconButton(onClick = { showSettings = true }) {
+            Icon(Icons.Filled.Settings, contentDescription = "Réglages", tint = Color.Gray)
+        }
+    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -87,7 +105,7 @@ fun GpsPage(viewModel: MainViewModel) {
                     focusedIndicatorColor = LightGreen,
                     unfocusedIndicatorColor = LightGreen,
                     focusedLabelColor = LightGreen,
-                    unfocusedLabelColor = LightGreen
+                    //unfocusedLabelColor = LightGreen
                 )
             )
             Spacer(Modifier.height(8.dp))
@@ -153,7 +171,7 @@ fun GpsPage(viewModel: MainViewModel) {
                             val lon = location?.longitude ?: 0.0
 
                             viewModel.addGpsPoint(
-                                GpsPoint(pointName, lat, lon, selectedCategory)
+                                GpsPoint(pointName, lat, lon, selectedCategory, currentDate)
                             )
                             Log.d(
                                 "GpsPage",
@@ -170,6 +188,76 @@ fun GpsPage(viewModel: MainViewModel) {
                 colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
             ) {
                 Text("Enregistrer la position", textAlign = TextAlign.Center)
+            }
+        }
+    }
+    if (showSettings) {
+        // Ajoute un fond semi-opaque
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xFF000000))
+        ) {
+            SettingsPage(onClose = { showSettings = false }, viewModel = viewModel)
+        }
+    }
+    if (showSettings) {
+        SettingsPage(onClose = { showSettings = false }, viewModel = viewModel)
+    }
+}
+
+@Composable
+fun SettingsPage(
+    onClose: () -> Unit,
+    viewModel: MainViewModel
+) {
+    val context = LocalContext.current
+    val LightGreen = Color(0xFF81C784)
+    val Orange = Color(0xFFFFA726)
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            uri?.let { viewModel.importFromExcelUri(it) }
+        }
+    )
+
+    Box(
+        Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            Modifier
+                .padding(24.dp)
+                .fillMaxWidth(0.85f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Réglages", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = { viewModel.exportToExcel() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Orange)
+            ) {
+                Text("Exporter en Excel")
+            }
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    importLauncher.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+            ) {
+                Text("Importer depuis Excel")
+            }
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = onClose,
+                modifier = Modifier.align(Alignment.End),
+                colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+            ) {
+                Text("Fermer")
             }
         }
     }
