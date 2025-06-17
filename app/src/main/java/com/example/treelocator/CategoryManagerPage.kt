@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +44,13 @@ fun CategoryManagerPage(viewModel: MainViewModel, onClose: () -> Unit) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Nom de la catégorie") }
+            label = { Text("Nom de la catégorie") },
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = LightGreen,
+                unfocusedIndicatorColor = LightGreen,
+                focusedLabelColor = LightGreen,
+                //unfocusedLabelColor = LightGreen
+            )
         )
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
@@ -63,7 +70,13 @@ fun CategoryManagerPage(viewModel: MainViewModel, onClose: () -> Unit) {
                         contentDescription = null
                     )
                 },
-                modifier = Modifier.menuAnchor()
+                modifier = Modifier.menuAnchor(),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = LightGreen,
+                    unfocusedIndicatorColor = LightGreen,
+                    focusedLabelColor = LightGreen,
+                    unfocusedLabelColor = LightGreen
+                )
             )
             ExposedDropdownMenu(
                 expanded = expanded,

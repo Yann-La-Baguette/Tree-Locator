@@ -18,10 +18,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +39,7 @@ fun CategoriesPage(viewModel: MainViewModel) {
     var lastScrollOffset by remember { mutableStateOf(0) }
     var pointToDelete by remember { mutableStateOf<GpsPoint?>(null) }
     var categoryToDelete by remember { mutableStateOf<Category?>(null) }
+    var pointToEdit by remember { mutableStateOf<GpsPoint?>(null) }
 
     // --- Ajout pour le filtre par mois ---
     val moisList = listOf(
@@ -131,6 +132,9 @@ fun CategoriesPage(viewModel: MainViewModel) {
                                         Column(Modifier.weight(1f)) {
                                             Text(point.name ?: "Sans nom", style = MaterialTheme.typography.bodyMedium)
                                             Text(formatDate(point.date), style = MaterialTheme.typography.bodySmall)
+                                        }
+                                        IconButton(onClick = { pointToEdit = point }) {
+                                            Icon(Icons.Filled.Edit, contentDescription = "Modifier le point", tint = LightGreen)
                                         }
                                         IconButton(onClick = { pointToDelete = point }) {
                                             Icon(Icons.Filled.Delete, contentDescription = "Supprimer le point", tint = Color.Red)
@@ -226,6 +230,17 @@ fun CategoriesPage(viewModel: MainViewModel) {
                 item {
                     CategoryTree()
                 }
+            }
+            if (pointToEdit != null) {
+                EditPointDialog(
+                    point = pointToEdit!!,
+                    categories = categories,
+                    onDismiss = { pointToEdit = null },
+                    onSave = { updatedPoint ->
+                        viewModel.updateGpsPoint(updatedPoint)
+                        pointToEdit = null
+                    }
+                )
             }
         }
         if (fabVisible) {
@@ -337,5 +352,148 @@ fun formatDate(date: String?): String {
         else "Date inconnue"
     } catch (e: Exception) {
         "Date inconnue"
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditPointDialog(
+    point: GpsPoint,
+    categories: List<Category>,
+    onDismiss: () -> Unit,
+    onSave: (GpsPoint) -> Unit
+) {
+    var name by remember { mutableStateOf(point.name ?: "") }
+    var category by remember { mutableStateOf(point.category ?: "") }
+    var latitude by remember { mutableStateOf(point.latitude.toString()) }
+    var longitude by remember { mutableStateOf(point.longitude.toString()) }
+    var date by remember { mutableStateOf(point.date ?: "") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val categoryNames = categories.map { it.name }.distinct()
+    val categoryPaths = categories.map { cat -> getCategoryFullPath(cat, categories) }
+    val categoryMap = categories.associateBy { getCategoryFullPath(it, categories) }
+
+    var categoryPath by remember { mutableStateOf(getCategoryFullPath(categories.find { it.name == category } ?: categories.first(), categories)) }
+
+    val LightGreen = Color(0xFF81C784)
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 8.dp) {
+            Column(Modifier.padding(24.dp)) {
+                Text("Modifier le point", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nom") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = LightGreen,
+                        unfocusedIndicatorColor = LightGreen,
+                        focusedLabelColor = LightGreen,
+                        //unfocusedLabelColor = LightGreen
+                    )
+                )
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = categoryPath,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Catégorie") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = LightGreen,
+                            unfocusedIndicatorColor = LightGreen,
+                            focusedLabelColor = LightGreen,
+                            unfocusedLabelColor = LightGreen
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        categoryPaths.forEach { path ->
+                            DropdownMenuItem(
+                                text = { Text(path) },
+                                onClick = {
+                                    categoryPath = path
+                                    category = categoryMap[path]?.name ?: ""
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = latitude,
+                    onValueChange = { latitude = it },
+                    label = { Text("Latitude") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = LightGreen,
+                        unfocusedIndicatorColor = LightGreen,
+                        focusedLabelColor = LightGreen,
+                        //unfocusedLabelColor = LightGreen
+                    )
+                )
+                OutlinedTextField(
+                    value = longitude,
+                    onValueChange = { longitude = it },
+                    label = { Text("Longitude") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = LightGreen,
+                        unfocusedIndicatorColor = LightGreen,
+                        focusedLabelColor = LightGreen,
+                        //unfocusedLabelColor = LightGreen
+                    )
+                )
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { date = it },
+                    label = { Text("Date (yyyy-MM-dd)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = LightGreen,
+                        unfocusedIndicatorColor = LightGreen,
+                        focusedLabelColor = LightGreen,
+                        //unfocusedLabelColor = LightGreen
+                    )
+                )
+                Row(Modifier.align(Alignment.End)) {
+                    TextButton(onClick = onDismiss) { Text("Annuler", color = LightGreen) }
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = {
+                        onSave(
+                            point.copy(
+                                name = name,
+                                category = category,
+                                latitude = latitude.toDoubleOrNull() ?: point.latitude,
+                                longitude = longitude.toDoubleOrNull() ?: point.longitude,
+                                date = date,
+                            )
+                        )
+                    },
+                        colors = ButtonDefaults.buttonColors(containerColor = LightGreen)
+                    ) { Text("Enregistrer") }
+                }
+            }
+        }
+    }
+}
+
+fun getCategoryFullPath(category: Category, categories: List<Category>): String {
+    return if (category.parent == null) {
+        category.name
+    } else {
+        val parent = categories.find { it.name == category.parent }
+        if (parent != null) getCategoryFullPath(parent, categories) + "/" + category.name
+        else category.name
     }
 }

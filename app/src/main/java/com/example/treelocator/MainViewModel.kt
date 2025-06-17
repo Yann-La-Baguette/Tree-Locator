@@ -62,6 +62,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateGpsPoint(updatedPoint: GpsPoint) {
+        viewModelScope.launch {
+            val newList = _gpsPoints.value.map { if (it.id == updatedPoint.id) updatedPoint else it }
+            _gpsPoints.value = newList
+            saveData()
+        }
+    }
+
     fun deleteCategory(category: Category) {
         val toDelete = mutableListOf(category)
         var i = 0
@@ -128,46 +136,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun importFromExcel() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val excelFile = File(getApplication<Application>().filesDir, "export.xlsx")
-                if (!excelFile.exists()) return@launch
-                FileInputStream(excelFile).use { fis ->
-                    val workbook = WorkbookFactory.create(fis)
-                    // Catégories
-                    val catSheet = workbook.getSheet("Catégories")
-                    val newCats = mutableListOf<Category>()
-                    for (i in 1..catSheet.lastRowNum) {
-                        val row = catSheet.getRow(i)
-                        val name = row.getCell(0)?.stringCellValue ?: continue
-                        val parent = row.getCell(1)?.stringCellValue?.takeIf { it.isNotBlank() }
-                        newCats.add(Category(name, parent))
-                    }
-                    // Points GPS
-                    val pointSheet = workbook.getSheet("Points GPS")
-                    val newPoints = mutableListOf<GpsPoint>()
-                    for (i in 1..pointSheet.lastRowNum) {
-                        val row = pointSheet.getRow(i)
-                        val name = row.getCell(0)?.stringCellValue ?: continue
-                        val category = row.getCell(1)?.stringCellValue
-                        val lat = row.getCell(2)?.numericCellValue ?: 0.0
-                        val lon = row.getCell(3)?.numericCellValue ?: 0.0
-                        val date = row.getCell(4)?.stringCellValue
-                        newPoints.add(GpsPoint(name, lat, lon, category, date))
-                    }
-                    workbook.close()
-                    _categories.value = newCats
-                    _gpsPoints.value = newPoints
-                    saveData()
-                    Log.d("MainViewModel", "Import Excel réussi")
-                }
-            } catch (e: Exception) {
-                Log.e("MainViewModel", "Erreur import Excel", e)
-            }
-        }
-    }
-
     fun importFromExcelUri(uri: android.net.Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -193,7 +161,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val lat = row.getCell(2)?.numericCellValue ?: 0.0
                         val lon = row.getCell(3)?.numericCellValue ?: 0.0
                         val date = row.getCell(4)?.stringCellValue
-                        newPoints.add(GpsPoint(name, lat, lon, category, date))
+                        newPoints.add(
+                            GpsPoint(
+                                name = name,
+                                latitude = lat,
+                                longitude = lon,
+                                category = category,
+                                date = date
+                            )
+                        )
                     }
                     workbook.close()
                     _categories.value = newCats

@@ -171,7 +171,14 @@ fun GpsPage(viewModel: MainViewModel) {
                             val lon = location?.longitude ?: 0.0
 
                             viewModel.addGpsPoint(
-                                GpsPoint(pointName, lat, lon, selectedCategory, currentDate)
+                                //GpsPoint(pointName, lat, lon, selectedCategory, currentDate)
+                                GpsPoint(
+                                    name = pointName,
+                                    latitude = lat,
+                                    longitude = lon,
+                                    category = selectedCategory,
+                                    date = currentDate
+                                )
                             )
                             Log.d(
                                 "GpsPage",
