@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.treelocator"
+    namespace = "com.yannlabaguette.treelocator"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.treelocator"
+        applicationId = "com.yannlabaguette.treelocator"
         minSdk = 30
         targetSdk = 35
         versionCode = 1
